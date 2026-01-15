@@ -27,6 +27,18 @@ Each phase produces artifacts that feed the next. You compact context between ph
 
 ---
 
+## Philosophy: What Each Phase Produces
+
+**Design (archival)** — Can be checked into git and referenced months later. Describes WHAT to build and WHY at module/component level. Fully specifies contracts (APIs, interfaces) because other designs may depend on them. Does NOT include implementation code — that's intentional.
+
+**Implementation Plan (just-in-time)** — Created immediately before execution. Verifies current codebase state matches design assumptions. Generates fresh, executable code based on actual state. May diverge from design if codebase has changed. Tasks are 2-5 minutes of work each.
+
+**Execution** — Follows implementation plan exactly. Code review at every step ensures quality.
+
+The key insight: **design plans tell you where you're going; implementation plans tell you how to get there from where you are now.** A design plan written two weeks ago is still valid direction. But the implementation plan must be generated fresh because the codebase may have changed.
+
+---
+
 ## Phase 1: Design (`/start-design-plan`)
 
 **What you provide:** A rough idea, some constraints, maybe URLs to relevant docs.

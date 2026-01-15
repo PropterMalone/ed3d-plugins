@@ -15,6 +15,55 @@ Transform validated design from brainstorming conversation into permanent, struc
 
 **Context:** Design should already be validated through brainstorming. This skill documents it, not creates it.
 
+## Level of Detail: Design vs Implementation
+
+**Design plans are directional and archival.** They can be checked into git and referenced months later. Other design plans may depend on contracts specified here.
+
+**Implementation plans are tactical and just-in-time.** They verify current codebase state and generate executable code immediately before execution.
+
+**What belongs in design plans:**
+
+| Include | Exclude |
+|---------|---------|
+| Module and directory structure | Task-level breakdowns |
+| Component names and responsibilities | Implementation code |
+| File paths (from investigation) | Function bodies |
+| Dependencies between components | Step-by-step instructions |
+| "Done when" verification criteria | Test code |
+
+**Exception: Contracts get full specification.** When a component exposes an interface that other systems depend on, specify the contract fully:
+
+- API endpoints with request/response shapes
+- Inter-service interfaces (types, method signatures)
+- Database schemas that other systems read
+- Message formats for queues/events
+
+Contracts can include code blocks showing types and interfaces. This is different from implementation code — contracts define boundaries, not behavior.
+
+**Example — Contract specification (OK):**
+```typescript
+interface TokenService {
+  generate(claims: TokenClaims): Promise<string>;
+  validate(token: string): Promise<TokenClaims | null>;
+}
+
+interface TokenClaims {
+  sub: string;      // service identifier
+  aud: string[];    // allowed audiences
+  exp: number;      // expiration timestamp
+}
+```
+
+**Example — Implementation code (NOT OK for design plans):**
+```typescript
+async function generate(claims: TokenClaims): Promise<string> {
+  const payload = { ...claims, iat: Date.now() };
+  return jwt.sign(payload, config.secret, { algorithm: 'RS256' });
+}
+```
+
+The first defines what the boundary looks like. The second implements behavior — that belongs in implementation plans.
+
 ## File Location and Naming
 
 **Save to:** `docs/design-plans/YYYY-MM-DD-<topic>.md`
@@ -102,30 +151,34 @@ Break implementation into discrete phases (<=8 recommended):
 
 **Tests can evolve.** A test written in Phase 2 may be modified in Phase 4 as requirements expand. This is expected. The constraint is that Phase 2 ends with passing tests for what Phase 2 delivers.
 
-**Structure phases as subcomponents.** A phase may contain multiple logical subcomponents. Each subcomponent should have its tests grouped with it, not deferred to the end of the phase.
+**Structure phases as subcomponents.** A phase may contain multiple logical subcomponents. List them at the component level — the implementation plan will break these into tasks.
 
-Good structure (tests per subcomponent):
+Good structure (component-level):
+```
+Phase 2: Core Services
+**Goal:** Token generation and session management
+
+**Components:**
+- TokenService in `src/services/auth/` — generates and validates JWT tokens
+- SessionManager in `src/services/auth/` — creates, validates, and invalidates sessions
+- Types in `src/types/auth.ts` — TokenClaims, SessionData interfaces
+
+**Dependencies:** Phase 1 (project setup)
+
+**Done when:** Token generation/validation works, sessions can be created/invalidated, all tests pass
+```
+
+Bad structure (task-level — this belongs in implementation plans):
 ```
 Phase 2: Core Services
 - Task 1: TokenPayload type and TokenConfig
 - Task 2: TokenService implementation
 - Task 3: TokenService tests
-- Task 4: UserSession type
-- Task 5: SessionManager implementation
-- Task 6: SessionManager tests
-```
-
-Bad structure (all tests at end):
-```
-Phase 2: Core Services
-- Task 1: TokenPayload type and TokenConfig
-- Task 2: TokenService implementation
-- Task 3: UserSession type
 - Task 4: SessionManager implementation
-- Task 5: All tests for TokenService and SessionManager
+- Task 5: SessionManager tests
 ```
 
-This structure allows the execution agent to group Tasks 1-3 as one subcomponent and Tasks 4-6 as another, verifying each before moving on.
+Design plans describe WHAT gets built. Implementation plans describe HOW to build it step-by-step.
 
 **Phase count:**
 - Target: 5-8 phases (sweet spot for planning)
@@ -151,7 +204,7 @@ Add note to Additional Considerations:
 
 ## Using Codebase Investigation Findings
 
-**Include exact paths and structure from investigation:**
+**Include paths and component descriptions from investigation. Do NOT include implementation details.**
 
 Good Phase definitions:
 
@@ -161,45 +214,53 @@ Good Phase definitions:
 **Goal:** Initialize project structure and dependencies
 
 **Components:**
-- Create: `package.json` with auth dependencies (jsonwebtoken, bcrypt)
-- Create: `tsconfig.json` with strict mode
-- Create: `src/index.ts` (minimal entry point)
+- `package.json` with auth dependencies (jsonwebtoken, bcrypt)
+- `tsconfig.json` with strict mode
+- `src/index.ts` entry point
 
 **Dependencies:** None (first phase)
 
-**Done when:** `npm install` succeeds, `npm run build` succeeds, no type errors
+**Done when:** `npm install` succeeds, `npm run build` succeeds
 ```
 
 **Functionality phase example:**
 ```markdown
 ### Phase 2: Token Generation Service
-**Goal:** Implement JWT token generation and validation
+**Goal:** JWT token generation and validation for service-to-service auth
 
 **Components:**
-- Create: `src/services/auth/token-service.ts`
-- Create: `src/services/auth/validator.ts`
-- Create: `tests/services/auth/token-service.test.ts`
-- Create: `tests/services/auth/validator.test.ts`
+- TokenService in `src/services/auth/` — generates signed JWTs, validates signatures and expiration
+- TokenValidator in `src/services/auth/` — middleware-friendly validation that returns claims or rejects
 
 **Dependencies:** Phase 1 (project setup)
 
-**Done when:**
-- Unit tests pass for token generation (create, sign, verify)
-- Validator tests pass (valid tokens accepted, invalid rejected, expired rejected)
-- Build succeeds with no type errors
+**Done when:** Tokens can be generated, validated, and rejected when invalid/expired
 ```
 
-Bad Phase definition:
+Bad Phase definitions:
+
+**Too vague:**
 ```markdown
 ### Phase 1: Authentication
 **Goal:** Add auth stuff
-
 **Components:** Auth files
-
 **Dependencies:** Database maybe
-
-**Testing:** Make sure it works
 ```
+
+**Too detailed (task-level):**
+```markdown
+### Phase 2: Token Service
+**Components:**
+- Create `src/types/token.ts` with TokenClaims interface
+- Create `src/services/auth/token-service.ts` with generate() and validate()
+- Create `tests/services/auth/token-service.test.ts`
+- Step 1: Write failing test for generate()
+- Step 2: Implement generate()
+- Step 3: Write failing test for validate()
+...
+```
+
+The second example is doing implementation planning's job. Design plans stay at component level.
 
 ## Writing Style
 
@@ -335,8 +396,11 @@ EOF
 | Excuse | Reality |
 |--------|---------|
 | "Design is simple, don't need phases" | Phases make implementation manageable. Always include. |
-| "Phases are obvious, don't need detail" | writing-plans needs exact paths. Provide them. |
+| "Phases are obvious, don't need detail" | writing-plans needs component descriptions. Provide them. |
 | "Can have 10 phases if needed" | Hard limit is 8. Scope or split. |
+| "I'll include the code so implementation is easier" | No. Implementation plans generate code fresh from codebase state. Design provides direction only. |
+| "Breaking into tasks helps the reader" | Task breakdown is implementation planning's job. Design stays at component level. |
+| "I'll just show how the function works" | Implementation code doesn't belong in design. Show contracts/interfaces if needed, not function bodies. |
 | "Additional considerations should be comprehensive" | Only include if relevant. YAGNI applies. |
 | "Should document all future possibilities" | Document current design only. No hypotheticals. |
 | "Existing patterns section can be skipped" | Shows investigation happened. Always include. |

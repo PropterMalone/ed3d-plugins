@@ -19,6 +19,20 @@ Assume they are a skilled developer, but know almost nothing about our toolset o
 
 **Save plans to:** `docs/implementation-plans/YYYY-MM-DD-<feature-name>/phase_##.md`
 
+## Critical: Design Plans Provide Direction, Not Code
+
+**Design plans are intentionally high-level.** They describe components, modules, and contracts — not implementation code. This is by design.
+
+**You MUST generate code fresh based on codebase investigation.** Do NOT copy code from the design document. Even if a design plan contains code examples (it shouldn't, but some might), treat them as illustrative only.
+
+**Why this matters:**
+- Design plans may be days or weeks old
+- Codebase state changes between design and implementation
+- Investigation reveals actual patterns, dependencies, and constraints
+- Your code must work with the codebase as it exists NOW
+
+**The design plan tells you WHERE you're going. Codebase investigation tells you HOW to get there from where you are.**
+
 ## Before Starting
 
 **REQUIRED: Verify scope and codebase state**
@@ -386,6 +400,8 @@ These are violations of the skill requirements:
 | "File probably exists, I'll say 'update if exists'" | Use codebase-investigator. Write definitive instruction. |
 | "Design mentioned this file, must be there" | Codebase changes. Use investigator to verify current state. |
 | "I can quickly verify files myself" | Use codebase-investigator. Saves context and prevents hallucination. |
+| "Design plan has code, I'll use that" | No. Design provides direction. Generate code fresh from codebase investigation. |
+| "Design plan is recent, code should still work" | Codebase may have changed. Investigation is the source of truth, not the design. |
 | "User can figure out if file exists during execution" | Your job is exact instructions. No ambiguity. |
 | "Testing Phase 3 will fail but that's OK because it'll be fixed in Phase 4" | All phases must compile and pass tests before they conclude. |
 | "Phase validation slows me down" | Going off track wastes far more time. Validate each phase. |

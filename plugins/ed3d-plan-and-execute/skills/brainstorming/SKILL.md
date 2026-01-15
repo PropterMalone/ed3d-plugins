@@ -229,6 +229,13 @@ Options:
 - Use open-ended questions here to allow freeform feedback
 - Mark Phase 3 as completed when all sections validated
 
+**Level of detail:** Present architecture and components, not implementation code.
+
+- **Contracts/interfaces: OK.** If a component exposes an API or interface that other systems depend on, show the shape (types, method signatures, request/response formats).
+- **Implementation code: NOT OK.** Function bodies, algorithms, and executable logic belong in implementation plans, not design.
+
+The distinction: contracts define boundaries between components. Implementation defines behavior within components. Brainstorming validates the boundaries; implementation planning fills in the behavior.
+
 **Output:** Validated design held in conversation context, ready for documentation.
 
 ## Question Patterns
@@ -319,6 +326,7 @@ These are violations of the skill requirements:
 | "I know this codebase, don't need investigator" | You don't know current state. Always verify. |
 | "Obvious solution, skip research" | Codebase may have established pattern. Check first. |
 | "Don't need internet research for this" | External knowledge and current docs matter. Research when relevant. |
+| "I'll show the implementation so partner understands" | Show contracts/interfaces, not implementation. Implementation planning generates code later. |
 
 **All of these mean: STOP. Follow the requirements exactly.**
 
