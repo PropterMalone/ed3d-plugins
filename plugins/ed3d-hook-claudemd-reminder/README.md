@@ -4,7 +4,9 @@ A Claude Code hook plugin that reminds to update CLAUDE.md files when committing
 
 ## What it does
 
-When you run `git status` or `git log`, this hook adds a gentle reminder to consider invoking the `project-claude-librarian` agent if your changes affect contracts, APIs, or domain structure.
+When you run `git status`, `git log`, `jj status`, or `jj log`, this hook adds a gentle reminder to consider invoking the `project-claude-librarian` agent if your changes affect contracts, APIs, or domain structure.
+
+Supports both **Git** and **Jujutsu** (jj) version control systems.
 
 ## Integration
 

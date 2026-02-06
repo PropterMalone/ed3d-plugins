@@ -1,5 +1,39 @@
 # Changelog
 
+## ed3d-plan-and-execute 1.6.0
+
+Adds comprehensive Jujutsu (jj) workflow support.
+
+**New:**
+- **using-jj-workflow** - Complete guide to working with Jujutsu VCS, covering changes, bookmarks, and operations
+- **finishing-jj-work** - Workflow for completing and pushing work in jj repositories
+- **jj-quick-reference** - Quick lookup for common jj commands and git equivalents
+
+**Changed:**
+- Plugin description now mentions both Git and Jujutsu support
+
+## ed3d-hook-claudemd-reminder 1.0.2
+
+Adds Jujutsu (jj) version control support alongside Git.
+
+**Changed:**
+- Hook now triggers on both Git (`git status`, `git log`) and Jujutsu (`jj status`, `jj st`, `jj log`) commands
+- Updated description and README to reflect dual VCS support
+
+## Windows Compatibility - Multiple plugins 1.0.1 / 1.5.1
+
+Adds Windows compatibility to plugin hooks.
+
+**Fixed:**
+- **ed3d-hook-claudemd-reminder 1.0.1**: Changed `python3` to `python` in PostToolUse hook for Windows compatibility
+- **ed3d-basic-agents 1.0.1**: Converted bash session-start hook to Python for cross-platform support
+- **ed3d-hook-skill-reinforcement 1.0.1**: Converted bash hook-reminder to Python for cross-platform support
+- **ed3d-plan-and-execute 1.5.1**: Converted bash session-start hook to Python for cross-platform support
+
+**New:**
+- Added Python equivalents for all bash hook scripts (session-start.py, hook-reminder.py)
+- All hooks now use `python` command instead of `python3` or bash scripts
+
 ## ed3d-plan-and-execute 1.5.0
 
 Promotes experimental execution workflow to stable.
