@@ -1,5 +1,17 @@
 # Changelog
 
+## ed3d-plan-and-execute 1.6.0
+
+Adds comprehensive Jujutsu (jj) workflow support.
+
+**New:**
+- **using-jj-workflow** - Complete guide to working with Jujutsu VCS, covering changes, bookmarks, and operations
+- **finishing-jj-work** - Workflow for completing and pushing work in jj repositories
+- **jj-quick-reference** - Quick lookup for common jj commands and git equivalents
+
+**Changed:**
+- Plugin description now mentions both Git and Jujutsu support
+
 ## ed3d-hook-claudemd-reminder 1.0.2
 
 Adds Jujutsu (jj) version control support alongside Git.

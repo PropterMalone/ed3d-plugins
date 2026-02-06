@@ -125,6 +125,23 @@ After all tasks:
 
 ---
 
+## Version Control Support
+
+This plugin supports both **Git** and **Jujutsu (jj)** workflows:
+
+**Git workflows:**
+- `using-git-worktrees` - Create isolated workspaces for parallel development
+- `finishing-a-development-branch` - Complete work with merge/PR options
+
+**Jujutsu workflows:**
+- `using-jj-workflow` - Work with jj's change-based model
+- `finishing-jj-work` - Complete and push work in jj repositories
+- `jj-quick-reference` - Command lookup and git equivalents
+
+Both VCS options integrate seamlessly with the design → plan → execute workflow.
+
+---
+
 ## Working with Larger Problems
 
 For larger efforts, we've found success in first decomposing the problem before starting the design phase.
