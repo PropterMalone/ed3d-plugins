@@ -94,8 +94,8 @@
         },
         {
             "name": "ed3d-hook-claudemd-reminder",
-            "description": "A PostToolUse hook that reminds to invoke project-claude-librarian before committing when git status or git log reveals changes that may warrant CLAUDE.md updates.",
-            "version": "1.0.1",
+            "description": "A PostToolUse hook that reminds to invoke project-claude-librarian before committing when git/jj status or log reveals changes that may warrant CLAUDE.md updates. Supports both Git and Jujutsu.",
+            "version": "1.0.2",
             "source": "./plugins/ed3d-hook-claudemd-reminder",
             "author": {
                 "name": "Ed",

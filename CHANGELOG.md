@@ -1,5 +1,13 @@
 # Changelog
 
+## ed3d-hook-claudemd-reminder 1.0.2
+
+Adds Jujutsu (jj) version control support alongside Git.
+
+**Changed:**
+- Hook now triggers on both Git (`git status`, `git log`) and Jujutsu (`jj status`, `jj st`, `jj log`) commands
+- Updated description and README to reflect dual VCS support
+
 ## Windows Compatibility - Multiple plugins 1.0.1 / 1.5.1
 
 Adds Windows compatibility to plugin hooks.
