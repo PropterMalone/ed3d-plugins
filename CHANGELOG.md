@@ -1,5 +1,19 @@
 # Changelog
 
+## Windows Compatibility - Multiple plugins 1.0.1 / 1.5.1
+
+Adds Windows compatibility to plugin hooks.
+
+**Fixed:**
+- **ed3d-hook-claudemd-reminder 1.0.1**: Changed `python3` to `python` in PostToolUse hook for Windows compatibility
+- **ed3d-basic-agents 1.0.1**: Converted bash session-start hook to Python for cross-platform support
+- **ed3d-hook-skill-reinforcement 1.0.1**: Converted bash hook-reminder to Python for cross-platform support
+- **ed3d-plan-and-execute 1.5.1**: Converted bash session-start hook to Python for cross-platform support
+
+**New:**
+- Added Python equivalents for all bash hook scripts (session-start.py, hook-reminder.py)
+- All hooks now use `python` command instead of `python3` or bash scripts
+
 ## ed3d-plan-and-execute 1.5.0
 
 Promotes experimental execution workflow to stable.
