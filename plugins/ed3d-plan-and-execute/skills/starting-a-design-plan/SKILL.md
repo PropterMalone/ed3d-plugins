@@ -1,6 +1,7 @@
 ---
 name: starting-a-design-plan
 description: Use when beginning any design process - orchestrates gathering context, clarifying requirements, brainstorming solutions, and documenting validated designs to create implementation-ready design documents
+user-invocable: false
 ---
 
 # Starting a Design Plan
@@ -26,24 +27,25 @@ Orchestrate the complete design workflow from initial idea to implementation-rea
 
 ## The Process
 
-**REQUIRED: Create TodoWrite tracker at start**
+**REQUIRED: Create task tracker at start**
 
-Use TodoWrite to create todos for each phase:
+Use TaskCreate to create todos for each phase (or TodoWrite in older Claude Code versions):
 
 - Phase 1: Context Gathering (initial information collected)
+- (conditional) Read project design guidance (if `.ed3d/design-plan-guidance.md` exists)
 - Phase 2: Clarification (requirements disambiguated)
 - Phase 3: Definition of Done (deliverables confirmed)
 - Phase 4: Brainstorming (design validated)
 - Phase 5: Design Documentation (design written to docs/design-plans/)
 - Phase 6: Planning Handoff (implementation plan offered/created)
 
-Mark each phase as in_progress when working on it, completed when finished.
+Use TaskUpdate to mark each phase as in_progress when working on it, completed when finished (or TodoWrite in older versions).
 
 ### Phase 1: Context Gathering
 
 **Never skip this phase.** Even if the user provides detailed information, ask for anything missing.
 
-Mark Phase 1 as in_progress in TodoWrite.
+Use TaskUpdate to mark Phase 1 as in_progress.
 
 **Ask the user to provide (freeform, not AskUserQuestion):**
 
@@ -76,9 +78,40 @@ Share whatever details you have. We'll clarify anything unclear in the next step
 
 Mark Phase 1 as completed when you have initial context.
 
+### Between Phase 1 and Phase 2: Check for Project Guidance
+
+Before clarification, check for project-specific design guidance.
+
+**Check if `.ed3d/design-plan-guidance.md` exists:**
+
+Use the Read tool to check if `.ed3d/design-plan-guidance.md` exists in the session's working directory.
+
+**If the file exists:**
+
+1. Use TaskCreate to add: "Read project design guidance from [absolute path to .ed3d/design-plan-guidance.md]"
+   - Set this task as blocked by Phase 1 (Context Gathering)
+   - Update Phase 2 (Clarification) to be blocked by this new task
+2. Mark the task in_progress
+3. Read the file and incorporate the guidance into your understanding
+4. Mark the task completed
+5. Proceed to Phase 2
+
+**If the file does not exist:**
+
+Proceed directly to Phase 2. Do not create a task or mention the missing file.
+
+**What project guidance provides:**
+- Domain-specific terminology to use in clarification
+- Architectural constraints or preferences
+- Technologies that are required, preferred, or forbidden
+- Stakeholders and their priorities
+- Project conventions that designs must follow
+
+The guidance informs what questions you ask during clarification.
+
 ### Phase 2: Clarification
 
-Mark Phase 2 as in_progress in TodoWrite.
+Use TaskUpdate to mark Phase 2 as in_progress.
 
 **REQUIRED SUB-SKILL:** Use ed3d-plan-and-execute:asking-clarifying-questions
 
@@ -99,7 +132,7 @@ Mark Phase 2 as completed when requirements are disambiguated.
 
 Before brainstorming the *how*, lock in the *what*. Brainstorming explores texture and approach — it assumes the goal is already clear.
 
-Mark Phase 3 as in_progress in TodoWrite.
+Use TaskUpdate to mark Phase 3 as in_progress.
 
 **Synthesize the Definition of Done from context gathered so far:**
 
@@ -139,9 +172,37 @@ Examples of clarifying questions:
 
 **REQUIRED:** Once the user confirms the Definition of Done, create the design document file immediately. This captures the DoD at full fidelity before brainstorming begins.
 
-**File location:** `docs/design-plans/YYYY-MM-DD-<topic>.md`
+##### Step 1: Get Design Plan Name
 
-Use the actual date and a descriptive topic slug (e.g., `2025-01-18-oauth2-service-auth.md`).
+The slug becomes part of all acceptance criteria identifiers (e.g., `my-feature.AC1.1`) and appears in test names. Ask the user to choose it explicitly.
+
+**Generate 2-3 suggested slugs** based on the conversation context. Good slugs are:
+- Lowercase with hyphens (no spaces, underscores, or special characters)
+- **Terse but unambiguous** — prefer short forms that don't create confusion (e.g., `authn` not `authentication`, but not `auth` since that's ambiguous with `authz`)
+- Recognizable months later
+
+**Use AskUserQuestion:**
+
+```
+Question: "What should we call this design plan? The name becomes the prefix for all acceptance criteria (e.g., `{slug}.AC1.1`) and appears in test names.
+
+If you have a ticketing system, you can use the ticket name (e.g., PROJ-1234)."
+
+Options:
+  - "[auto-generated-slug-1]" (e.g., "oauth2-svc-authn")
+  - "[auto-generated-slug-2]" (e.g., "svc-authn")
+  - "[auto-generated-slug-3]" (if meaningfully different)
+```
+
+**If user selects "Other":** They can provide any name. Normalize it:
+- Ticket names (pattern: `UPPERCASE-DIGITS`, e.g., `PROJ-1234`): keep as-is
+- Descriptive names: lowercase, hyphens for spaces, strip invalid characters (e.g., "My Cool Feature" → `my-cool-feature`)
+
+##### Step 2: Create File
+
+**File location:** `docs/design-plans/YYYY-MM-DD-{slug}.md`
+
+Use today's date and the user-chosen slug.
 
 **Initial file contents:**
 
@@ -154,6 +215,9 @@ Use the actual date and a descriptive topic slug (e.g., `2025-01-18-oauth2-servi
 ## Definition of Done
 [The confirmed Definition of Done - copy exactly as confirmed with user]
 
+## Acceptance Criteria
+<!-- TO BE GENERATED and validated before glossary -->
+
 ## Glossary
 <!-- TO BE GENERATED after body is written -->
 ```
@@ -162,7 +226,7 @@ Use the actual date and a descriptive topic slug (e.g., `2025-01-18-oauth2-servi
 - Captures Definition of Done at peak resolution (right after user confirmation)
 - Prevents fidelity loss during brainstorming conversation
 - Creates working document that grows incrementally
-- Summary and Glossary filled in later by writing-design-plans skill
+- Acceptance Criteria, Summary, and Glossary filled in later by writing-design-plans skill
 
 Mark Phase 3 as completed when user confirms the Definition of Done AND the file is created.
 
@@ -170,7 +234,7 @@ Mark Phase 3 as completed when user confirms the Definition of Done AND the file
 
 With clear understanding from Phases 1-3, explore design alternatives and validate the approach.
 
-Mark Phase 4 as in_progress in TodoWrite.
+Use TaskUpdate to mark Phase 4 as in_progress.
 
 **REQUIRED SUB-SKILL:** Use ed3d-plan-and-execute:brainstorming
 
@@ -196,7 +260,7 @@ Mark Phase 4 as completed when design is validated.
 
 Append the validated design to the document created in Phase 3.
 
-Mark Phase 5 as in_progress in TodoWrite.
+Use TaskUpdate to mark Phase 5 as in_progress.
 
 **REQUIRED SUB-SKILL:** Use ed3d-plan-and-execute:writing-design-plans
 
@@ -206,6 +270,7 @@ Announce: "I'm using the writing-design-plans skill to complete the design docum
 - Title
 - Summary placeholder
 - Confirmed Definition of Done
+- Acceptance Criteria placeholder
 - Glossary placeholder
 
 The writing-design-plans skill will:
@@ -213,6 +278,7 @@ The writing-design-plans skill will:
 - Structure with implementation phases (<=8 recommended)
   - DO NOT pad out phases in order to reach the number of 8. 8 is the maximum, not the target.
 - Document existing patterns followed
+- Generate Acceptance Criteria (success + failure cases for each DoD item), get human validation
 - Generate Summary and Glossary to replace placeholders
 - Commit to git
 
@@ -224,7 +290,7 @@ Mark Phase 5 as completed when design document is committed.
 
 After design is documented, guide user to create implementation plan in fresh context.
 
-Mark Phase 6 as in_progress in TodoWrite.
+Use TaskUpdate to mark Phase 6 as in_progress.
 
 **Do NOT create implementation plan directly.** The user needs to /clear context first.
 
@@ -239,7 +305,7 @@ Ready to create the implementation plan? This requires fresh context to work eff
 
 (1) Copy this command now:
 ```
-/ed3d-ed3d-plan-and-execute:start-implementation-plan @docs/design-plans/[full-filename].md .
+/ed3d-plan-and-execute:start-implementation-plan @docs/design-plans/[full-filename].md .
 ```
 (the `.` at the end is necessary or else Claude Code will eat the command and do the wrong thing.)
 
@@ -296,5 +362,5 @@ You can and should go backward when:
 | **Clarify before ideating** | Phase 2 prevents building the wrong thing |
 | **Lock in the goal before exploring** | Phase 3 confirms what "done" means before brainstorming the how |
 | **All brains in skills** | This skill orchestrates; sub-skills contain domain expertise |
-| **TodoWrite tracking** | YOU MUST create and update todos for all phases |
+| **Task tracking** | YOU MUST create todos with TaskCreate and update with TaskUpdate for all phases (or TodoWrite in older versions) |
 | **Flexible progression** | Go backward when needed to fill gaps |

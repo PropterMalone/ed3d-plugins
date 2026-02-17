@@ -1,6 +1,7 @@
 ---
 name: starting-an-implementation-plan
 description: Use when beginning implementation from a design plan - orchestrates branch creation, detailed planning, and hands off to execution with all necessary context
+user-invocable: false
 ---
 
 # Starting an Implementation Plan
@@ -31,17 +32,47 @@ If `docs/design-plans/` doesn't exist or is empty, ask the user to provide the p
 
 ## The Process
 
-This skill has three phases:
+This skill has three steps:
 
 1. **Branch Setup:** Select and create branch for implementation
 2. **Planning:** Create detailed implementation plan
 3. **Execution Handoff:** Direct user to execute the plan
 
-### Phase 1: Branch Setup
+**Step 0: Create orchestration task tracker**
+
+Use TaskCreate to track the orchestration steps:
+
+```
+TaskCreate: "Branch setup"
+(conditional) TaskCreate: "Read project implementation guidance from [absolute path]"
+  → TaskUpdate: addBlockedBy: [Branch setup]
+  → (only if .ed3d/implementation-plan-guidance.md exists)
+TaskCreate: "Create implementation plan"
+  → TaskUpdate: addBlockedBy: [Branch setup] (or [Read guidance] if it exists)
+TaskCreate: "Re-read starting-an-implementation-plan skill (restore context)"
+  → (DO NOT set blockedBy yet - will be updated after granular tasks are created)
+TaskCreate: "Execution handoff"
+  → TaskUpdate: addBlockedBy: [Re-read skill]
+```
+
+**CRITICAL: The "Re-read skill" task must be re-pointed AFTER writing-implementation-plans creates the Finalization task.** See "After Planning: Update Dependencies" below.
+
+The "Create implementation plan" task wraps the granular tasks created by writing-implementation-plans. The "Re-read skill" step ensures context is restored after potential compaction before handoff.
+
+### Branch Setup
+
+Mark "Branch setup" task as in_progress.
 
 Before planning, set up the branch and workspace for implementation work.
 
-Extract a friendly name from the design plan filename (e.g., `oauth2-service-auth` from `2025-01-18-oauth2-service-auth.md`).
+Extract the **slug** from the design plan filename (everything after `YYYY-MM-DD-`, excluding `.md`). For example, `oauth2-svc-authn` from `2025-01-18-oauth2-svc-authn.md`.
+
+This slug is used for:
+1. Implementation plan directory name (`docs/implementation-plans/YYYY-MM-DD-{slug}/`)
+2. Worktree directory name (`.worktrees/{slug}`)
+3. **Scoping all AC identifiers** — every acceptance criterion uses the format `{slug}.AC{N}.{M}`
+
+The slug ensures AC identifiers are globally unique across multiple plan-and-execute rounds.
 
 **Step 1: Ask about worktree**
 
@@ -66,8 +97,8 @@ Options:
    ```
    Question: "Which branch should I use for this worktree?"
    Options:
-     - "[friendly-name]" (e.g., oauth2-service-auth)
-     - "$(whoami)/[friendly-name]" (e.g., ed/oauth2-service-auth)
+     - "[friendly-name]" (e.g., oauth2-svc-authn)
+     - "$(whoami)/[friendly-name]" (e.g., ed/oauth2-svc-authn)
    ```
 5. Create worktree:
    - Default location (unless directed otherwise): `$repoRoot/.worktrees/[friendly-name]`
@@ -83,8 +114,8 @@ Options:
    Question: "Which branch should I use for this implementation?"
    Options:
      - "Use current branch" (stay on current branch, no branch creation)
-     - "[friendly-name]" (e.g., oauth2-service-auth)
-     - "$(whoami)/[friendly-name]" (e.g., ed/oauth2-service-auth)
+     - "[friendly-name]" (e.g., oauth2-svc-authn)
+     - "$(whoami)/[friendly-name]" (e.g., ed/oauth2-svc-authn)
    ```
 2. **If "Use current branch":** Continue with current branch (no git commands)
 3. **If branch name provided:**
@@ -94,9 +125,39 @@ Options:
    - Announce: "Created and checked out branch `[branch-name]` from `origin/[main-or-master]`"
 4. **If branch creation fails:** Report error to user and ask if they want to use current branch instead
 
-**THEN proceed to Phase 2.**
+Mark "Branch setup" task as completed. **THEN proceed to Planning.**
 
-### Phase 2: Planning
+### Check for Implementation Guidance
+
+After branch setup, check for project-specific implementation guidance.
+
+**Check if `.ed3d/implementation-plan-guidance.md` exists:**
+
+Use the Read tool to check if `.ed3d/implementation-plan-guidance.md` exists in the session's working directory.
+
+**If the file exists:**
+
+1. Use TaskCreate to add: "Read project implementation guidance from [absolute path to .ed3d/implementation-plan-guidance.md]"
+   - Set this task as blocked by "Branch setup"
+   - Update "Create implementation plan" to be blocked by this new task
+2. Mark the task in_progress
+3. Read the file and incorporate the guidance into your understanding
+4. Mark the task completed
+5. Proceed to Planning
+
+**If the file does not exist:**
+
+Proceed directly to Planning. Do not create a task or mention the missing file.
+
+**What implementation guidance provides:**
+- Coding standards and conventions
+- Testing requirements and patterns
+- Review criteria beyond defaults
+- Project-specific quality gates
+
+### Planning
+
+Mark "Create implementation plan" task as in_progress.
 
 **REQUIRED SUB-SKILL:** Use ed3d-plan-and-execute:writing-implementation-plans
 
@@ -111,7 +172,53 @@ The writing-implementation-plans skill will:
 
 **Output:** Complete implementation plan written to files, on appropriate branch.
 
-### Phase 3: Execution Handoff
+Mark "Create implementation plan" task as completed.
+
+### After Planning: Update Dependencies
+
+**CRITICAL: Update the "Re-read skill" task to be blocked by Finalization.**
+
+The granular tasks are now created. Find the Finalization task ID and update dependencies:
+
+```
+TaskUpdate: "Re-read starting-an-implementation-plan skill"
+  → addBlockedBy: [Finalization task ID]
+```
+
+This ensures the task list shows the correct order:
+```
+✔ #1 Branch setup
+✔ #2 Create implementation plan
+✔ #5 Phase 1A: Read [Phase Name] from /path/to/design.md
+✔ #6 Phase 1B: Investigate codebase for Phase 1
+...
+✔ #N Finalization: Run code-reviewer...
+◻ #3 Re-read skill › blocked by #N
+◻ #4 Execution handoff › blocked by #3
+```
+
+### Restore Context (Before Handoff)
+
+Mark "Re-read starting-an-implementation-plan skill (restore context)" task as in_progress.
+
+**CRITICAL: Re-read this skill before proceeding to handoff.**
+
+After potentially long planning work (especially if context compaction occurred), re-read this skill file to ensure you have accurate instructions for the execution handoff:
+
+```bash
+# Re-read this skill to restore context
+cat /path/to/plugins/ed3d-plan-and-execute/skills/starting-an-implementation-plan/SKILL.md
+```
+
+Or use the Read tool on the skill file path.
+
+**Why this matters:** After compaction, you may have lost details about the handoff process. Re-reading ensures you provide correct absolute paths and instructions.
+
+Mark "Re-read starting-an-implementation-plan skill" task as completed.
+
+### Execution Handoff
+
+Mark "Execution handoff" task as in_progress.
 
 After planning is complete, hand off to execution.
 
@@ -171,6 +278,8 @@ The execute-implementation-plan command will implement the plan task-by-task wit
 - Long conversations accumulate context that degrades quality
 - /clear gives the execution phase a clean slate
 
+Mark "Execution handoff" task as completed.
+
 ## Common Mistakes
 
 | Mistake | Fix |
@@ -182,6 +291,9 @@ The execute-implementation-plan command will implement the plan task-by-task wit
 | Not verifying plan directory exists | Always `ls -d` the full plan path before outputting command |
 | Passing phase_01.md instead of directory | Pass the directory so all phases execute |
 | Forgetting to mention /clear | Always tell user to /clear before execute |
+| Skipping "Re-read skill" step before handoff | Always re-read this skill to restore context post-compaction |
+| Not creating orchestration tasks at start | Create Branch setup, Planning, Re-read, Handoff tasks in Step 0 |
+| Not re-pointing "Re-read skill" after planning | Must update addBlockedBy to Finalization task, not "Create implementation plan" |
 
 ## Integration with Workflow
 
@@ -192,23 +304,36 @@ Design Plan (in docs/design-plans/)
   -> User runs /start-implementation-plan with design path
 
 Starting Implementation Plan (this skill)
-  -> Phase 1: Branch Setup
-    -> Ask if user wants worktree
-    -> If yes: invoke using-git-worktrees, create at .worktrees/[friendly-name]
-    -> If no: ask which branch, create branch from main/master if needed
+  -> Step 0: Create orchestration tasks
+    -> [ ] Branch setup
+    -> [ ] Create implementation plan
+    -> [ ] Re-read skill (restore context)
+    -> [ ] Execution handoff
 
-  -> Phase 2: Planning
+  -> Branch Setup [tracked task]
+    -> Ask if user wants worktree
+    -> If yes: invoke using-git-worktrees
+    -> If no: ask which branch, create if needed
+
+  -> Planning [tracked task wrapping granular tasks]
     -> Invoke writing-implementation-plans
-    -> Detailed task planning
-    -> Phase-by-phase validation
+    -> Creates granular tasks per phase (NA, NB, NC, ND)
+    -> Creates Finalization task (code review, fix ALL issues)
     -> Write to docs/implementation-plans/
 
-  -> Phase 3: Execution Handoff
-    -> Run `git rev-parse --show-toplevel` to get absolute working root
-    -> Verify plan directory exists with `ls -d`
-    -> Output command with verified absolute paths (tell user to copy first)
+  -> After Planning: Update Dependencies
+    -> Re-point "Re-read skill" to be blocked by Finalization task
+    -> Ensures correct execution order in task list
+
+  -> Restore Context [tracked task, blocked by Finalization]
+    -> Re-read this skill file
+    -> Ensures handoff instructions are accurate post-compaction
+
+  -> Execution Handoff [tracked task]
+    -> Run `git rev-parse --show-toplevel` for absolute paths
+    -> Verify plan directory exists
+    -> Output command with verified absolute paths
     -> Provide /clear command
-    -> User copies command, clears, then pastes
 
 Execute Implementation Plan (next step)
   -> Reads implementation plan
@@ -216,4 +341,4 @@ Execute Implementation Plan (next step)
   -> Code review between tasks
 ```
 
-**Purpose:** Bridge design and execution with appropriate branch isolation and context management.
+**Purpose:** Bridge design and execution with appropriate branch isolation, granular task tracking that survives compaction, and context restoration.

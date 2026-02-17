@@ -1,6 +1,7 @@
 ---
 name: writing-skills
 description: Use when creating new skills, editing existing skills, or verifying skills work before deployment - applies TDD to process documentation by testing with subagents before writing, iterating until bulletproof against rationalization
+user-invocable: false
 ---
 
 # Writing Skills
@@ -138,7 +139,7 @@ Run pressure scenario WITHOUT skill:
 
 ## Skill Creation Checklist
 
-**IMPORTANT:** Use TodoWrite for each item.
+**IMPORTANT:** Use TaskCreate to track each item (or TodoWrite in older Claude Code versions).
 
 **RED Phase:**
 - [ ] Create pressure scenarios (3+ combined pressures for discipline skills)

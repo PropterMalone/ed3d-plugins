@@ -1,6 +1,7 @@
 ---
 name: using-plan-and-execute
-description: Use when starting any conversation - establishes mandatory workflows for finding and using skills, including using Read tool before announcing usage, following brainstorming before coding, and creating TodoWrite todos for checklists
+description: Use when starting any conversation - establishes mandatory workflows for finding and using skills, including using Read tool before announcing usage, following brainstorming before coding, and creating task todos for checklists
+user-invocable: false
 ---
 
 <EXTREMELY-IMPORTANT>
@@ -17,8 +18,8 @@ This is not negotiable. This is not optional. You cannot rationalize your way ou
 
 Before responding to ANY user message, you MUST complete this checklist:
 
-1. ☐ List to yourself all skills from `<available_skills>`
-2. ☐ Ask yourself: "Does ANY skill in `<available_skills>` match this request?"
+1. ☐ List to yourself ALL available skills (shown in your system context)
+2. ☐ Ask yourself: "Does ANY available skill match this request?"
 3. ☐ If yes: use the `Skill` tool to invoke the skill and follow the skill exactly.
 
 **Responding WITHOUT completing this checklist = automatic failure.**
@@ -48,7 +49,7 @@ If a skill for your task exists, you must use it or you will fail at your task.
 
 ## Skills with Checklists
 
-If a skill has a checklist, YOU MUST create TodoWrite todos for EACH item.
+If a skill has a checklist, YOU MUST create task todos for EACH item using TaskCreate (or TodoWrite in older Claude Code versions).
 
 **Don't:**
 - Work through checklist mentally
@@ -56,7 +57,7 @@ If a skill has a checklist, YOU MUST create TodoWrite todos for EACH item.
 - Batch multiple items into one todo
 - Mark complete without doing them
 
-**Why:** Checklists without TodoWrite tracking = steps get skipped. Every time. The overhead of TodoWrite is tiny compared to the cost of missing steps.
+**Why:** Checklists without task tracking = steps get skipped. Every time. The overhead of task management is tiny compared to the cost of missing steps.
 
 ## Announcing Skill Usage
 
@@ -94,6 +95,6 @@ Your human partner's specific instructions describe WHAT to do, not HOW.
 3. Announce you're using it
 4. Follow what it says
 
-**Skill has checklist?** TodoWrite for every item.
+**Skill has checklist?** TaskCreate for every item (or TodoWrite in older versions).
 
 **Finding a relevant skill = mandatory to read and use it. Not optional.**

@@ -1,6 +1,7 @@
 ---
 name: creating-an-agent
 description: Use when creating specialized subagents for Claude Code plugins or the Task tool - covers description writing for auto-delegation, tool selection, prompt structure, and testing agents
+user-invocable: false
 ---
 
 # Creating an Agent
@@ -99,7 +100,7 @@ Choose tools based on agent responsibilities:
 | Edit | Modifying existing files |
 | Write | Creating new files |
 | Bash | Running commands, git, tests |
-| TodoWrite | Tracking multi-step workflows |
+| TaskCreate/TaskUpdate | Tracking multi-step workflows (TodoWrite in older versions) |
 | Task | Spawning sub-agents |
 | WebFetch/WebSearch | Research tasks |
 
@@ -281,7 +282,7 @@ You are a research specialist gathering and synthesizing information.
 ---
 name: task-implementor
 description: Use when implementing specific tasks from plans - writes code, runs tests, commits changes following TDD workflow
-tools: Read, Edit, Write, Bash, Grep, Glob, TodoWrite
+tools: Read, Edit, Write, Bash, Grep, Glob, TaskCreate, TaskUpdate, TaskList
 model: sonnet
 ---
 

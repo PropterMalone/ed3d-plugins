@@ -1,6 +1,7 @@
 ---
 name: writing-claude-directives
 description: Use when writing instructions that guide Claude behavior - skills, CLAUDE.md files, agent prompts, system prompts. Covers token efficiency, compliance techniques, and discovery optimization.
+user-invocable: false
 ---
 
 # Writing Claude Directives
@@ -86,7 +87,7 @@ Use structure to make compliance the path of least resistance:
 | Pattern | Example |
 |---------|---------|
 | Workflow steps | Numbered steps with verification gates |
-| TodoWrite tracking | Checklists without tracking = skipped steps |
+| Task tracking (TaskCreate/TaskUpdate) | Checklists without tracking = skipped steps (TodoWrite in older versions) |
 | Forced commitment | "Announce: I'm using [skill]" |
 | Explicit blocking | "If X happens, stop and do Y instead" |
 

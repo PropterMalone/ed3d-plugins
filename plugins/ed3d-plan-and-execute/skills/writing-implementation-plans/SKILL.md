@@ -1,6 +1,7 @@
 ---
 name: writing-implementation-plans
 description: Use when design is complete and you need detailed implementation tasks for engineers with zero codebase context - creates comprehensive implementation plans with exact file paths, complete code examples, and verification steps assuming engineer has minimal domain knowledge
+user-invocable: false
 ---
 
 # Writing Implementation Plans
@@ -10,10 +11,6 @@ description: Use when design is complete and you need detailed implementation ta
 Write comprehensive implementation plans assuming the engineer has zero context for our codebase and questionable taste. Document everything they need to know: which files to touch for each task, code, testing, docs they might need to check, how to verify it. Give them the whole plan as bite-sized tasks. DRY. YAGNI. Frequent commits.
 
 Assume they are a skilled developer, but know almost nothing about our toolset or problem domain. Assume they don't know good test design very well.
-
-**REQUIRED SKILL:** You MUST activate the `coding-effectively` skill.
-
-**CONDITIONAL SKILLS:** If you have skills available to you that are relevant to the topics in the design plan, activate them.
 
 **Announce at start:** "I'm using the writing-implementation-plans skill to create the implementation plan."
 
@@ -217,11 +214,24 @@ The design plan distinguishes between infrastructure phases (verified operationa
 - Don't force TDD on scaffolding
 - Verification = operational success
 - "npm install succeeds" is valid verification
+- **Verifies: None** — explicitly state this, don't invent ACs for setup phases
 
 **Functionality tasks** (code that does something):
 - Tests are deliverables alongside code
-- Phase ends with passing tests
-- Tests prove the behavior works
+- Each task lists which ACs it verifies (e.g., "Verifies: AC1.1, AC1.3")
+- Tests must verify those specific AC cases, not just "test the code"
+- Phase ends with passing tests for all ACs listed in the phase's AC Coverage
+
+**Test behavior, not implementation.**
+- Test that your function produces the right output, not that it called dependencies a certain way
+- If you refactored internals but behavior stayed the same, would the test still pass? If no, you're testing implementation details.
+- The AC is the spec: "Invalid password returns 401" means test the response, not verify that `bcrypt.compare()` was called
+
+**What doesn't need tests:**
+- Types (TypeScript compiler verifies these)
+- Dependencies that have their own tests (don't re-test them through your code)
+- How you call things (test the result, not the wiring)
+- Infrastructure/setup (verify operationally)
 
 **Subcomponent task grouping.** Design plans structure phases as subcomponents: types → implementation → tests. When writing tasks for a subcomponent, wrap them in subcomponent markers (see "Task and Subcomponent Markers" section):
 
@@ -266,7 +276,28 @@ The execution agent uses these markers to identify related tasks. The tests task
 **Codebase verified:** [Date/time of verification]
 
 ---
+
+## Acceptance Criteria Coverage
+
+This phase implements and tests:
+
+### {slug}.AC1: [Criterion heading from design plan]
+- **{slug}.AC1.1 Success:** [Copied literally from design plan]
+- **{slug}.AC1.3 Failure:** [Copied literally from design plan]
+
+### {slug}.AC2: [Criterion heading from design plan]
+- **{slug}.AC2.1 Success:** [Copied literally from design plan]
+
+---
 ```
+
+**AC Coverage rules:**
+- Copy AC text literally from the design plan—do not paraphrase
+- Use the full scoped AC identifier (e.g., `oauth2-svc-authn.AC1.1`), not bare `AC1.1`
+- Include ONLY the ACs this phase implements and tests
+- Include both the criterion heading (`{slug}.AC1`) and the specific cases (`{slug}.AC1.1`, `{slug}.AC1.3`)
+- Tasks in this phase must produce tests that verify these specific cases
+- An AC case may appear in multiple phases if partially addressed, but final phase must complete it
 
 ## Task and Subcomponent Markers
 
@@ -327,36 +358,128 @@ When tasks form a logical subcomponent (e.g., types → implementation → tests
 
 **Workflow depends on review mode selected above.**
 
-**Step 0: Create TodoWrite tracker**
+**Step 0: Create granular task tracker with dependencies**
 
-After verifying scope (≤8 phases), create a TodoWrite todo list with one item per phase:
+After verifying scope (≤8 phases), use TaskCreate to create granular sub-tasks for EACH phase. This structure survives context compaction.
+
+**CRITICAL: Include absolute paths and set up dependencies.**
+
+Before creating tasks, capture absolute paths:
+- `DESIGN_PATH`: Absolute path to design plan (e.g., `/Users/ed/project/docs/design-plans/2025-01-24-feature.md`)
+- `PLAN_DIR`: Absolute path to implementation plan directory (e.g., `/Users/ed/project/docs/implementation-plans/2025-01-24-feature/`)
+
+**Read the Acceptance Criteria section from the design plan.** Acceptance criteria are numbered (AC1, AC1.1, AC1.2, etc.) and define what "done" means. When writing each phase:
+1. Identify which ACs this phase implements (look at design phase's "Done when" + component responsibilities)
+2. Copy those AC entries literally into the phase's "Acceptance Criteria Coverage" header section
+3. Ensure tasks produce tests that verify each listed AC case
+
+**For each phase N, create these tasks with dependencies:**
 
 ```markdown
-- [ ] Phase 1: [Phase Name]
-- [ ] Phase 2: [Phase Name]
-- [ ] Phase 3: [Phase Name]
-...
+- [ ] Phase NA: Read [Phase Name] from {DESIGN_PATH}
+      → blocked by: Phase (N-1)D (or nothing if N=1)
+- [ ] Phase NB: Investigate codebase for Phase N and activate relevant skills
+      → blocked by: Phase NA
+- [ ] Phase NC: Research external deps (Phase N)
+      → blocked by: Phase NB
+- [ ] Phase ND: Write {PLAN_DIR}/phase_0N.md
+      → blocked by: Phase NC
 ```
 
-Mark each phase as in_progress when working on it, completed when written to disk.
+**VERBATIM TASK NAMES — DO NOT PARAPHRASE.** Copy task names exactly as shown above. "Investigate codebase for Phase N and activate relevant skills" must include "and activate relevant skills" — that phrase triggers skill activation after compaction. Paraphrasing loses critical instructions.
+
+**After all phase tasks, create finalization task:**
+
+Before creating the Finalization task, check if `.ed3d/implementation-plan-guidance.md` exists. If it does, include its absolute path in the task description:
+
+```markdown
+# If .ed3d/implementation-plan-guidance.md exists:
+- [ ] Finalization: Run code-reviewer over all phase files (guidance: [absolute path to .ed3d/implementation-plan-guidance.md]), fix ALL issues including minor ones
+      → blocked by: all Phase *D tasks
+
+# If .ed3d/implementation-plan-guidance.md does NOT exist:
+- [ ] Finalization: Run code-reviewer over all phase files, fix ALL issues including minor ones
+      → blocked by: all Phase *D tasks
+```
+
+**Example for a 3-phase design at `/Users/ed/project/docs/design-plans/2025-01-24-oauth.md`:**
+
+```
+TaskCreate: "Phase 1A: Read Token Types from /Users/ed/project/docs/design-plans/2025-01-24-oauth.md"
+TaskCreate: "Phase 1B: Investigate codebase for Phase 1 and activate relevant skills"
+  → TaskUpdate: addBlockedBy: [1A]
+TaskCreate: "Phase 1C: Research external deps (Phase 1)"
+  → TaskUpdate: addBlockedBy: [1B]
+TaskCreate: "Phase 1D: Write /Users/ed/project/docs/implementation-plans/2025-01-24-oauth/phase_01.md"
+  → TaskUpdate: addBlockedBy: [1C]
+
+TaskCreate: "Phase 2A: Read Token Service from /Users/ed/project/docs/design-plans/2025-01-24-oauth.md"
+  → TaskUpdate: addBlockedBy: [1D]
+TaskCreate: "Phase 2B: Investigate codebase for Phase 2 and activate relevant skills"
+  → TaskUpdate: addBlockedBy: [2A]
+TaskCreate: "Phase 2C: Research external deps (Phase 2)"
+  → TaskUpdate: addBlockedBy: [2B]
+TaskCreate: "Phase 2D: Write /Users/ed/project/docs/implementation-plans/2025-01-24-oauth/phase_02.md"
+  → TaskUpdate: addBlockedBy: [2C]
+
+TaskCreate: "Phase 3A: Read Session Manager from /Users/ed/project/docs/design-plans/2025-01-24-oauth.md"
+  → TaskUpdate: addBlockedBy: [2D]
+TaskCreate: "Phase 3B: Investigate codebase for Phase 3 and activate relevant skills"
+  → TaskUpdate: addBlockedBy: [3A]
+TaskCreate: "Phase 3C: Research external deps (Phase 3)"
+  → TaskUpdate: addBlockedBy: [3B]
+TaskCreate: "Phase 3D: Write /Users/ed/project/docs/implementation-plans/2025-01-24-oauth/phase_03.md"
+  → TaskUpdate: addBlockedBy: [3C]
+
+TaskCreate: "Finalization: Run code-reviewer over all phase files, fix ALL issues including minor ones"
+  → TaskUpdate: addBlockedBy: [1D, 2D, 3D]
+
+TaskCreate: "Test Requirements: Generate test-requirements.md from Acceptance Criteria"
+  → TaskUpdate: addBlockedBy: [Finalization]
+```
+
+**Why absolute paths in task descriptions:** After compaction, the task list is all that remains. Absolute paths ensure you know exactly which files to read/write without relying on context.
+
+**Why dependencies:** Tasks show `[blocked by #X, #Y]` in the task list, making execution order explicit and preventing out-of-order work.
+
+Use TaskUpdate to mark each sub-task as in_progress when starting, completed when done.
 
 ---
 
 ### If user chose "Review each phase interactively before writing":
 
-**Workflow for EACH phase:**
+**Workflow for EACH phase (using granular task tracking):**
 
-1. **Mark phase as in_progress** in TodoWrite
-2. **Read design phase** from original plan
-3. **Verify codebase state** for files mentioned in this phase:
+1. **Task NA: Read design phase**
+   - Mark task NA as in_progress
+   - Extract the `<!-- START_PHASE_N -->` section from design plan
+   - Mark task NA as completed
+
+2. **Task NB: Verify codebase state**
+   - Mark task NB as in_progress
    - Dispatch codebase-investigator with design assumptions for this phase
    - Review investigator findings for discrepancies
-4. **Research external dependencies** if phase involves them (see Section 4):
+   - **Activate relevant skills** based on findings (if not already active):
+     - TypeScript code? Activate TypeScript/coding style skills
+     - React components? Activate React skills
+     - Database work? Activate database skills
+     - Match skills to the technologies this phase involves
+   - Mark task NB as completed
+
+3. **Task NC: Research external dependencies** (if phase involves them)
+   - Mark task NC as in_progress
    - Dispatch internet-researcher for docs/standards/API patterns
    - Escalate to remote-code-researcher if docs are insufficient
    - Document findings for inclusion in phase output
-5. **Write implementation tasks** for this phase (in memory, not to file) based on actual codebase state and external research
-6. **Present to user** - Output the complete phase plan in your message text:
+   - Mark task NC as completed
+   - (Skip if no external deps - still mark completed with note "N/A")
+
+4. **Write implementation tasks** for this phase (in memory, not to file):
+   - Identify which ACs this phase covers based on design phase's scope
+   - Include the "Acceptance Criteria Coverage" section with literal AC copies
+   - Write tasks that implement and test each listed AC case
+
+5. **Present to user** - Output the complete phase plan in your message text:
 
 ```markdown
 **Phase [N]: [Phase Name]**
@@ -407,29 +530,50 @@ Mark each phase as in_progress when working on it, completed when written to dis
 - "Needs revision - [describe changes]"
 - "Other"
 
-7. **If approved:**
+7. **Task ND: Write phase file (if approved)**
+   - Mark task ND as in_progress
    - Write to `docs/implementation-plans/YYYY-MM-DD-<feature-name>/phase_##.md`
    - Plan document contains ONLY the implementation tasks (no verification findings)
-   - Mark phase as completed in TodoWrite, continue to next phase
-8. **If needs revision:** Keep as in_progress, revise based on feedback, present again
+   - Mark task ND as completed, continue to next phase
+
+8. **If needs revision:** Revise based on feedback, present again (do NOT mark ND as in_progress until approved)
 
 ---
 
 ### If user chose "Write all phases to disk, I'll review afterwards":
 
-**Workflow for EACH phase:**
+**Workflow for EACH phase (using granular task tracking):**
 
-1. **Mark phase as in_progress** in TodoWrite
-2. **Read design phase** from original plan
-3. **Verify codebase state** for files mentioned in this phase:
+1. **Task NA: Read design phase**
+   - Mark task NA as in_progress
+   - Extract the `<!-- START_PHASE_N -->` section from design plan
+   - Mark task NA as completed
+
+2. **Task NB: Verify codebase state**
+   - Mark task NB as in_progress
    - Dispatch codebase-investigator with design assumptions for this phase
    - Review investigator findings for discrepancies
-4. **Research external dependencies** if phase involves them (see Section 4):
+   - **Activate relevant skills** based on findings (if not already active):
+     - TypeScript code? Activate TypeScript/coding style skills
+     - React components? Activate React skills
+     - Database work? Activate database skills
+     - Match skills to the technologies this phase involves
+   - Mark task NB as completed
+
+3. **Task NC: Research external dependencies** (if phase involves them)
+   - Mark task NC as in_progress
    - Dispatch internet-researcher for docs/standards/API patterns
    - Escalate to remote-code-researcher if docs are insufficient
-5. **Write implementation tasks** for this phase based on actual codebase state and external research
-6. **Write directly to disk** at `docs/implementation-plans/YYYY-MM-DD-<feature-name>/phase_##.md`
-7. **Mark phase as completed** in TodoWrite, continue to next phase
+   - Mark task NC as completed
+   - (Skip if no external deps - still mark completed with note "N/A")
+
+4. **Task ND: Write phase file**
+   - Mark task ND as in_progress
+   - Identify which ACs this phase covers based on design phase's scope
+   - Include the "Acceptance Criteria Coverage" section with literal AC copies from design
+   - Write implementation tasks that implement and test each listed AC case
+   - Write directly to disk at `docs/implementation-plans/YYYY-MM-DD-<feature-name>/phase_##.md`
+   - Mark task ND as completed, continue to next phase
 
 **Do NOT emit phase content to the user before writing.** This conserves tokens.
 
@@ -480,60 +624,46 @@ git commit -m "chore: initialize project structure"
 <!-- START_TASK_N -->
 ### Task N: [Component Name]
 
+**Verifies:** {slug}.AC1.1, {slug}.AC1.3 (list specific AC cases this task tests)
+
 **Files:**
 - Create: `exact/path/to/file.py`
 - Modify: `exact/path/to/existing.py:123-145`
-- Test: `tests/exact/path/to/test.py`
+- Test: `tests/exact/path/to/test.py` (unit|integration|e2e)
 
-**Step 1: Write the failing test**
+**Implementation:**
+[Describe what to implement - contracts, behavior, key logic. Include code for complex/non-obvious implementations.]
 
-```python
-def test_specific_behavior():
-    result = function(input)
-    assert result == expected
-```
+**Testing:**
+Tests must verify each AC listed above:
+- {slug}.AC1.1: [brief description of what test should verify]
+- {slug}.AC1.3: [brief description of what test should verify]
 
-**Step 2: Run test to verify it fails**
+Follow project testing patterns. Task-implementor generates actual test code at execution time.
 
-Run: `pytest tests/path/test.py::test_name -v`
-Expected: FAIL with "function not defined"
+**Verification:**
+Run: `[test command]`
+Expected: All tests pass
 
-**Step 3: Write minimal implementation**
-
-```python
-def function(input):
-    return expected
-```
-
-**Step 4: Run test to verify it passes**
-
-Run: `pytest tests/path/test.py::test_name -v`
-Expected: PASS
-
-**Step 5: Commit**
-
-```bash
-git add tests/path/test.py src/path/file.py
-git commit -m "feat: add specific feature"
-```
+**Commit:** `feat: [description]`
 <!-- END_TASK_N -->
 ```
 
-**CRITICAL: Every code example must be immediately executable.**
+**Key principles for functionality tasks:**
 
-Code comments saying "TODO", "FIXME", or describing solutions not yet implemented = plan failure.
+1. **List ACs explicitly.** Every functionality task specifies which AC cases it verifies in the "Verifies" field.
 
-**NEVER write:**
-```python
-# Solution: Use admin credentials or pre-created bootstrap M2M app
-const client = getManagementClient(); // implement this somehow
-```
+2. **Describe tests, don't write test code.** The AC text is the spec (e.g., "AC1.3: Invalid password returns 401"). Task-implementor generates test code at execution time with fresh codebase context.
 
-**ALWAYS write:**
-Either provide the complete working code, OR split into a prior task that establishes the dependency.
+3. **Include implementation code when non-obvious.** If implementation is complex or project-specific patterns apply, include the code. If it's straightforward given the AC description, describe it.
 
-**If you find yourself writing "Solution: X or Y" when neither X nor Y exists:**
-STOP. Create a task BEFORE this one that implements the solution.
+4. **Specify test type and location.** Unit, integration, or e2e? Which file? This ensures consistency across phases.
+
+**Why no test code in plans:**
+- Test code needs actual function signatures from the implementation
+- Project testing patterns discovered at execution time
+- AC text like "Invalid password returns 401" is already a clear test spec
+- Task-implementor has fresher context than implementation planner
 
 **If you find yourself writing "this won't compile until Phase N+1":**
 STOP. You are describing something that belongs in the current phase. _Every phase must be executable with all tests passing when the phase completes._
@@ -564,10 +694,24 @@ These are violations of the skill requirements:
 | "Functionality phase but design forgot tests" | Surface to user. Functionality needs tests. Design gap, not your call to skip. |
 | "Plan looks complete, skip validation" | Always validate. Gaps found now are cheaper than gaps found during execution. |
 | "Validation is overkill for simple plans" | Simple plans validate quickly. Complex plans need it more. Always validate. |
+| "Finalization task is done, minor issues can wait" | NO. Task says "fix ALL issues including minor ones." Not done until zero issues. |
+| "I'll skip creating granular tasks, one per phase is enough" | Granular tasks survive compaction. Create NA, NB, NC, ND per phase + Finalization. |
+| "Dependencies are obvious, don't need addBlockedBy" | Task list shows blocked status. Set dependencies explicitly with TaskUpdate. |
+| "Relative paths are fine in task descriptions" | After compaction, context is lost. Use absolute paths so tasks are self-contained. |
+| "I'll paraphrase the task name, same meaning" | NO. Task names are VERBATIM. "and activate relevant skills" triggers behavior post-compaction. |
 | "I know how this library works from training" | Research it. APIs change. Use internet-researcher for docs, remote-code-researcher for internals. |
 | "Docs are probably accurate enough" | Usually yes. But if extending/customizing library behavior, verify with source code. |
 | "I'll clone the repo to check the docs" | No. Use internet-researcher for docs. Only clone (remote-code-researcher) for source code investigation. |
 | "Phase has external deps but I'll skip research" | Research is mandatory when phase involves external dependencies. Surface unknowns now. |
+| "Test requirements can be generated during execution" | No. Test requirements must exist before execution starts. Code reviewer uses them. |
+| "This type needs unit tests" | No. TypeScript compiler verifies types. Don't test what the compiler checks. |
+| "Should test that this calls the dependency correctly" | No. Test behavior (the result), not wiring (how you called things). |
+| "Dependency is used here, should verify it works" | No. Dependencies have their own tests. Test YOUR code's behavior. |
+| "More tests = better coverage" | Wrong tests = noise. Test the ACs, nothing more. |
+| "Phase doesn't have ACs but I'll add some tests anyway" | No. Explicitly state "Verifies: None" for infrastructure phases. Don't invent work. |
+| "Acceptance Criteria are clear, don't need test requirements" | Test requirements map criteria to specific tests. Execution needs this mapping. |
+| "I'll skip test requirements, user chose batch mode" | Batch mode skips interactive approval. Test requirements are still generated and written. |
+| "Test requirements task is optional" | No. It's a tracked task with dependencies. Must complete before execution handoff. |
 
 **All of these mean: STOP. Follow the requirements exactly.**
 
@@ -619,19 +763,21 @@ Which approach should I take?
 **Before starting:**
 - [ ] Count phases - refuse if >8
 - [ ] Ask user for review mode (batch vs interactive)
-- [ ] Create TodoWrite with all phases
+- [ ] Capture absolute paths: DESIGN_PATH and PLAN_DIR
+- [ ] Read Acceptance Criteria section from design plan
+- [ ] Create granular task list with TaskCreate (NA, NB, NC, ND per phase + Finalization + Test Requirements)
+- [ ] Set up dependencies with TaskUpdate addBlockedBy (see Step 0)
+- [ ] Task descriptions include absolute paths (not relative)
 
-**For each phase:**
-- [ ] Mark phase as in_progress in TodoWrite
-- [ ] Dispatch codebase-investigator with design assumptions for this phase
-- [ ] **If phase involves external dependencies:** Research them (internet-researcher first, escalate to remote-code-researcher if needed)
+**For each phase (tasks NA through ND):**
+- [ ] **Task NA:** Mark in_progress, read `<!-- START_PHASE_N -->` from design, mark completed
+- [ ] **Task NB:** Mark in_progress, dispatch codebase-investigator, review findings, mark completed
+- [ ] **Task NC:** Mark in_progress, research external deps if needed (or mark completed with "N/A"), mark completed
 - [ ] Write complete tasks with exact paths and code based on investigator and research findings
 - [ ] **If interactive mode:** Output complete phase plan, use AskUserQuestion for approval
-- [ ] **If batch mode:** Skip user presentation, write directly to disk
-- [ ] Write plan to `docs/implementation-plans/YYYY-MM-DD-<feature-name>/phase_##.md`
-- [ ] Mark phase as completed in TodoWrite
+- [ ] **Task ND:** Mark in_progress, write to absolute path in task description, mark completed
 
-**For each task:**
+**For each task in the plan:**
 - [ ] Exact file paths with line numbers for modifications
 - [ ] Complete code - zero TODOs, zero unresolved questions in comments
 - [ ] Every code example runs immediately without implementation decisions
@@ -639,30 +785,50 @@ Which approach should I take?
 - [ ] Exact commands with expected output
 - [ ] No conditional instructions ("if exists", "if needed")
 
-**After all phases written:**
-- [ ] Validate implementation plan against design plan (see below)
-- [ ] Fix any gaps identified
-- [ ] Offer execution choice
+**Finalization (after all phase ND tasks completed):**
+- [ ] Mark Finalization task as in_progress
+- [ ] Dispatch code-reviewer to validate plan against design
+- [ ] Fix ALL issues including Minor ones
+- [ ] Re-run code-reviewer until APPROVED with zero issues
+- [ ] Mark Finalization task as completed
+- [ ] Proceed to Test Requirements
 
-## Plan Validation
+**Test Requirements (after Finalization):**
+- [ ] Mark Test Requirements task as in_progress
+- [ ] Dispatch Opus subagent to generate test requirements from Acceptance Criteria
+- [ ] **If interactive mode:** Present to user, use AskUserQuestion for approval
+- [ ] **If batch mode:** Write directly without asking
+- [ ] Write test-requirements.md to PLAN_DIR
+- [ ] Mark Test Requirements task as completed
+- [ ] Proceed to execution handoff
 
-**After all phases are written to disk, validate the implementation plan against the design plan.**
+## Plan Validation (Finalization Task)
 
-Dispatch code-reviewer to evaluate coverage and alignment:
+**This is a tracked task: "Finalization: Run code-reviewer over all phase files, fix ALL issues including minor ones"**
+
+After all phase D tasks are completed, mark the Finalization task as in_progress.
+
+### Step 1: Dispatch code-reviewer
 
 ```
 <invoke name="Task">
-<parameter name="subagent_type">ed3d-ed3d-plan-and-execute:code-reviewer</parameter>
+<parameter name="subagent_type">ed3d-plan-and-execute:code-reviewer</parameter>
 <parameter name="description">Validating implementation plan against design</parameter>
 <parameter name="prompt">
   Review the implementation plan for completeness and alignment with the design.
 
   DESIGN_PLAN: [path to design plan, e.g., docs/design-plans/YYYY-MM-DD-feature.md]
 
+  IMPLEMENTATION_GUIDANCE: [absolute path to .ed3d/implementation-plan-guidance.md, or "None" if file does not exist]
+
   IMPLEMENTATION_PHASES:
   - [path to phase_01.md]
   - [path to phase_02.md]
   - [... all phase files]
+
+  If IMPLEMENTATION_GUIDANCE is not "None", read it first and apply any project-specific
+  review criteria, coding standards, or quality gates it specifies in addition to the
+  standard review checklist.
 
   Evaluate:
   1. **Coverage**: Does the implementation plan cover ALL requirements from the design?
@@ -694,19 +860,101 @@ Dispatch code-reviewer to evaluate coverage and alignment:
 </invoke>
 ```
 
-**If reviewer returns NEEDS_REVISION:**
+### Step 2: Fix ALL issues (including minor ones)
 
-1. Review the gaps and misalignments identified
-2. Update the relevant phase files to address issues
-3. Re-run validation until APPROVED
+**CRITICAL: You MUST fix ALL issues, including Minor ones.**
 
-**If reviewer returns APPROVED:**
+Do NOT rationalize skipping minor issues. Do NOT mark Finalization as completed until ALL issues are resolved.
 
-Proceed to execution handoff.
+**If reviewer returns NEEDS_REVISION or reports ANY issues:**
+
+1. **Create a task for EACH issue** (survives compaction):
+   ```
+   TaskCreate: "Finalization fix [Critical]: <VERBATIM issue description from reviewer>"
+   TaskCreate: "Finalization fix [Important]: <VERBATIM issue description from reviewer>"
+   TaskCreate: "Finalization fix [Minor]: <VERBATIM issue description from reviewer>"
+   ...one task per issue...
+   TaskCreate: "Finalization: Re-review after fixes"
+   TaskUpdate: set "Re-review" blocked by all fix tasks
+   ```
+
+   **Copy issue descriptions VERBATIM**, even if long. After compaction, the task description is all that remains — it must contain the full issue details to understand what to fix.
+
+2. Review the gaps, misalignments, and issues identified
+3. Fix ALL of them - Critical, Important, AND Minor
+4. Update the relevant phase files
+5. Mark each fix task complete as you address it
+6. Re-run code-reviewer validation
+7. If more issues found, create new individual fix tasks and repeat
+8. Mark "Re-review" complete when zero issues
+
+**Common rationalizations to REJECT:**
+- "Minor issues can be fixed during execution" - NO. Fix them now.
+- "This minor issue is just a style preference" - NO. Fix it.
+- "We can address this later" - NO. The task says "fix ALL issues including minor ones."
+
+### Step 3: Complete finalization
+
+**Only when code-reviewer returns APPROVED with zero issues:**
+
+Mark the Finalization task as completed.
+
+Proceed to Test Requirements generation.
+
+## Test Requirements Generation
+
+**Tracked task: "Test Requirements: Generate test-requirements.md from Acceptance Criteria"**
+
+Mark in_progress after Finalization completes.
+
+Test requirements map acceptance criteria to specific automated tests, and identify criteria requiring human verification. The test-analyst agent uses this during execution to validate coverage.
+
+**Step 1: Generate via subagent**
+
+```
+<invoke name="Task">
+<parameter name="subagent_type">ed3d-basic-agents:opus-general-purpose</parameter>
+<parameter name="description">Generating test requirements from Acceptance Criteria</parameter>
+<parameter name="prompt">
+Read the design at [DESIGN_PATH] and implementation phases in [PLAN_DIR].
+
+Generate test-requirements.md mapping each acceptance criterion to:
+- Automated tests: criterion, test type (unit/integration/e2e), expected test file path
+- Human verification: criteria that can't be automated, with justification and verification approach
+
+Rationalize against implementation decisions made during planning. Every acceptance criterion must map to either an automated test or documented human verification.
+</parameter>
+</invoke>
+```
+
+**Step 2: Handle based on review mode**
+
+- **Interactive mode:** Present to user, AskUserQuestion for approval. This is the LAST interactive item.
+- **Batch mode:** Write directly, announce completion.
+
+**If user requests revisions in interactive mode:**
+
+1. **Create a task for EACH revision** (survives compaction):
+   ```
+   TaskCreate: "Test requirements fix: <VERBATIM revision request from user>"
+   ...one task per revision...
+   TaskCreate: "Test requirements: Re-present for approval"
+   TaskUpdate: set "Re-present" blocked by all fix tasks
+   ```
+
+   **Copy revision requests VERBATIM**, even if long. After compaction, the task description must contain the full details.
+
+2. Address each revision, marking tasks complete as you go
+3. Re-present for approval
+4. Repeat until approved
+
+**Step 3: Write and complete**
+
+Write to `[PLAN_DIR]/test-requirements.md`. Mark task completed. Proceed to execution handoff.
 
 ## Execution Handoff
 
-After validation passes, announce:
+After Test Requirements generation completes, announce:
 
-**"Plan complete and validated. Saved to [count] files in `docs/implementation-plans/YYYY-MM-DD-<feature-name>`. The first file is `<full-path>`.**
+**"Implementation plan complete and validated. Saved to [count] phase files + test-requirements.md in `docs/implementation-plans/YYYY-MM-DD-<feature-name>/`. The first phase file is `<full-path>`. Test requirements are in `<full-path>/test-requirements.md`."**
 
