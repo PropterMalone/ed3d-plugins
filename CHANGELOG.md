@@ -1,5 +1,25 @@
 # Changelog
 
+## ed3d-hook-security-hardening 1.0.0
+
+Hook plugin that catches common secrets leakage patterns in Claude Code sessions.
+
+**New:**
+- PreToolUse hook on Bash: detects echoing secret env vars, printenv, env|grep without -q, cat/source on .env files, grep on shell configs showing values, tokens in git clone URLs, tokens in curl URL parameters
+- PostToolUse hook on Write/Edit: reminds about gitignore and chmod 600 after writing to sensitive files (.env, .envrc, credentials, secrets, .pem, .key, .netrc, .npmrc)
+- Uses shlex tokenization for robust command parsing over fragile regex
+- High-confidence leaks (echo/printenv/length/substring) are denied; medium-confidence patterns (cat .env, source .env, env|grep) force user approval
+
+## ed3d-extending-claude 1.1.1
+
+Add prompt-security-hardening skill and require it from writing-claude-directives.
+
+**New:**
+- `prompt-security-hardening` skill: 7 rules covering secrets leakage into LLM context, env var existence checks, file permissions, gitignore verification, URL/process token exposure, input sanitization, and context contamination from files
+
+**Changed:**
+- `writing-claude-directives`: now unconditionally requires prompt-security-hardening as a subskill
+
 ## ed3d-house-style 1.0.3
 
 Relax FCIS file classification to target only files with runtime behavior.
