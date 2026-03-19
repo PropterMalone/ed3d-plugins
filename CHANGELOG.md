@@ -1,5 +1,68 @@
 # Changelog
 
+## ed3d-hook-security-hardening 1.0.1
+
+Expanded detection coverage to address common Claude-generated access patterns.
+
+**New:**
+- Detect polyglot env readers (python3, node, ruby, perl, awk reading environment variables)
+- Detect `declare -p` on secret variables
+- Detect `curl -d @.env` and `curl -F file=@.env` file exfiltration
+- Detect `while read` loops on secret files
+- Detect `git remote set-url` and `git config` with embedded tokens
+- Detect file reading via sed, awk, strings, base64, xxd, od, dd, tee, perl
+- Detect `grep '' .env` (empty/wildcard pattern reads entire file)
+- 197 tests for bash secrets hook, 37 tests for sensitive file hook
+
+**Fixed:**
+- Echo check now catches all secret variables in multi-variable commands
+- Dot-source regex correctly catches `. .env` syntax
+- Handle non-string command input without crashing
+
+## ed3d-hook-security-hardening 1.0.0
+
+Hook plugin that catches common secrets leakage patterns in Claude Code sessions.
+
+**New:**
+- PreToolUse hook on Bash: detects echoing secret env vars, printenv, env|grep without -q, cat/source on .env files, grep on shell configs showing values, tokens in git clone URLs, tokens in curl URL parameters
+- PostToolUse hook on Write/Edit: reminds about gitignore and chmod 600 after writing to sensitive files (.env, .envrc, credentials, secrets, .pem, .key, .netrc, .npmrc)
+- Uses shlex tokenization for robust command parsing over fragile regex
+- High-confidence leaks (echo/printenv/length/substring) are denied; medium-confidence patterns (cat .env, source .env, env|grep) force user approval
+
+## ed3d-extending-claude 1.1.1
+
+Add prompt-security-hardening skill and require it from writing-claude-directives.
+
+**New:**
+- `prompt-security-hardening` skill: 7 rules covering secrets leakage into LLM context, env var existence checks, file permissions, gitignore verification, URL/process token exposure, input sanitization, and context contamination from files
+
+**Changed:**
+- `writing-claude-directives`: now unconditionally requires prompt-security-hardening as a subskill
+
+## ed3d-house-style 1.0.3
+
+Relax FCIS file classification to target only files with runtime behavior.
+
+**Changed:**
+- FCIS skill: classification now mandatory only for files containing runtime logic (functions, classes with methods, orchestration)
+- FCIS skill: added exemptions for type-only files, constants, barrels, tests, and generated files
+- FCIS skill: added threshold note — exempt files that grow to include runtime logic must be classified
+- TypeScript skill: added clarifying note in FCIS Integration section about exemptions
+
+## ed3d-plan-and-execute 1.10.3
+
+Add session isolation for parallel planning/execution to prevent file collisions.
+
+**New:**
+- `SCRATCHPAD_DIR` parameter with unique session ID (e.g., `/tmp/plan-2025-01-24-feature-a7f3b2/`) ensures isolation when multiple planning or execution sessions run in parallel
+- Random session ID component prevents collisions on retry attempts
+
+**Changed:**
+- `writing-implementation-plans`: creates and passes SCRATCHPAD_DIR to code-reviewer in Finalization step
+- `executing-an-implementation-plan`: creates SCRATCHPAD_DIR at startup, passes to all code review invocations
+- `requesting-code-review`: accepts and forwards SCRATCHPAD_DIR to code-reviewer subagent
+- `code-reviewer` agent: documents SCRATCHPAD_DIR usage for any scratch files
+
 ## ed3d-extending-claude 1.1.0
 
 Adds marketplace management skill for creating and maintaining Claude Code Plugin Marketplaces.
